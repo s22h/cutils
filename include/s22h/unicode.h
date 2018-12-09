@@ -3,7 +3,7 @@
 	@author s22h
 	@date 30 Jun 2018
 	@brief A header-only library for Unicode handling
-	@version 0.1.0
+	@version 0.1.1
 
 	Code review of initial version provided by StackExchange members:
 
@@ -88,7 +88,7 @@ size_t utf8_strnlen(const uint8_t* text, size_t* valid_bytes, size_t max_bytes) 
 		}
 
 		if (cp_size > 1) {
-			for (int n = 1; n < cp_size; n++) {
+			for (unsigned int n = 1; n < cp_size; n++) {
 				if (text[i + n] == 0) {
 					// String is NUL-terminated in the middle of the codepoint
 					fprintf(stderr, "utf8_strnlen: string is NUL-terminated in the middle of a codepoint.\n");
@@ -163,22 +163,23 @@ size_t utf8_to_utf32(const uint8_t* text, uint32_t* buffer, size_t buffer_size) 
 		case 2:
 			buffer[n] =
 				((uint32_t) text[i] & ~UTF8_TWO_BYTES_MASK) << 6 |
-				((uint32_t) text[i + 1] & UTF8_CONTINUATION_MASK)
+				((uint32_t) text[i + 1] & ~UTF8_CONTINUATION_MASK)
 			;
 			break;
 		case 3:
 			buffer[n] =
 				((uint32_t) text[i] & ~UTF8_THREE_BYTES_MASK) << 12 |
-				((uint32_t) text[i + 1] & UTF8_CONTINUATION_MASK) << 6 |
-				((uint32_t) text[i + 2] & UTF8_CONTINUATION_MASK)
+				((uint32_t) text[i + 1] & ~UTF8_CONTINUATION_MASK) << 6 |
+				((uint32_t) text[i + 2] & ~UTF8_CONTINUATION_MASK)
 			;
+
 			break;
 		case 4:
 			buffer[n] =
 				((uint32_t) text[i] & ~UTF8_FOUR_BYTES_MASK) << 18 |
-				((uint32_t) text[i + 1] & UTF8_CONTINUATION_MASK) << 12 |
-				((uint32_t) text[i + 2] & UTF8_CONTINUATION_MASK) << 6 |
-				((uint32_t) text[i + 3] & UTF8_CONTINUATION_MASK)
+				((uint32_t) text[i + 1] & ~UTF8_CONTINUATION_MASK) << 12 |
+				((uint32_t) text[i + 2] & ~UTF8_CONTINUATION_MASK) << 6 |
+				((uint32_t) text[i + 3] & ~UTF8_CONTINUATION_MASK)
 			;
 			break;
 		default:
@@ -190,7 +191,7 @@ size_t utf8_to_utf32(const uint8_t* text, uint32_t* buffer, size_t buffer_size) 
 		i += cp_size;
 	}
 
-	buffer[num_chars] = 0;
+	buffer[num_chars] = '\0';
 	return num_chars;
 }
 
