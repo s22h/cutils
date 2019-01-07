@@ -1,9 +1,9 @@
 /**
 	@file s22h/unicode.h
 	@author s22h
-	@date 30 Jun 2018
+	@date 7 Jan 2019
 	@brief A header-only library for Unicode handling
-	@version 0.1.1
+	@version 0.1.2
 
 	Code review of initial version provided by StackExchange members:
 
@@ -38,7 +38,8 @@ static const uint32_t UTF8_CONTINUATION_BITS = 0x80;
 	@param byte The byte that is the starting byte of a UTF8 codepoint.
 	@return The number of bytes of the codepoint or 0 if not a valid code point.
 */
-size_t utf8_codepoint_size(const uint8_t byte) {
+size_t utf8_codepoint_size(const uint8_t byte)
+{
 	if ((byte & UTF8_ONE_BYTE_MASK) == UTF8_ONE_BYTE_BITS) {
 		return 1;
 	}
@@ -65,10 +66,11 @@ size_t utf8_codepoint_size(const uint8_t byte) {
 	@param text A NUL-terminated UTF8 string.
 	@param valid_bytes A pointer to a size_t variable that will be set with the
 		number of valid bytes in the string. Can be NULL.
-	@param max_bytes The maximal amount of bytes to read.
+	@param max_bytes The maximum amount of bytes to read.
 	@return The number of valid characters in the string.
 */
-size_t utf8_strnlen(const uint8_t* text, size_t* valid_bytes, size_t max_bytes) {
+size_t utf8_strnlen(const uint8_t* text, size_t* valid_bytes, size_t max_bytes)
+{
 	size_t i = 0;
 	size_t cp_size;
 	size_t num_chars = 0;
@@ -79,11 +81,13 @@ size_t utf8_strnlen(const uint8_t* text, size_t* valid_bytes, size_t max_bytes) 
 
 		if (cp_size == 0) {
 			// Invalid code point
+			fprintf(stderr, "utf8_strnlen: invalid codepoint at byte %lu.\n", i);
 			break;
 		}
 
-		if (max_bytes > 0 && i + cp_size >= max_bytes) {
+		if (max_bytes > 0 && i + cp_size > max_bytes) {
 			// Codepoint would be out of bounds
+			fprintf(stderr, "utf8_strnlen: codepoint out of bounds at bytes %lu-%lu.\n", i, i + cp_size);
 			break;
 		}
 
@@ -110,8 +114,9 @@ size_t utf8_strnlen(const uint8_t* text, size_t* valid_bytes, size_t max_bytes) 
 		i += cp_size;
 		num_chars++;
 
-		if (max_bytes > 0 && i >= max_bytes) {
+		if (max_bytes > 0 && i > max_bytes) {
 			// Next codepoint would be out of bounds
+			fprintf(stderr, "utf8_strnlen: next codepoint out of bounds at byte %lu.\n", i);
 			break;
 		}
 	}
@@ -131,8 +136,51 @@ size_t utf8_strnlen(const uint8_t* text, size_t* valid_bytes, size_t max_bytes) 
 		number of valid bytes in the string. Can be NULL.
 	@return The number of valid characters in the string.
 */
-size_t utf8_strlen(const uint8_t* text, size_t* valid_bytes) {
+size_t utf8_strlen(const uint8_t* text, size_t* valid_bytes)
+{
 	return utf8_strnlen(text, valid_bytes, 0);
+}
+
+/**
+	@brief Finds the string length of a given, NUL-terminated UTF32 string,
+		using up to `max_bytes` bytes.
+
+	@param text A NUL-terminated UTF32 string.
+	@param valid_bytes A pointer to a size_t variable that will be set with the
+		number of valid bytes in the string. Can be NULL.
+	@param max_bytes The maximum amount of bytes to read.
+	@return The number of valid characters in the string.
+*/
+size_t utf32_strnlen(const uint32_t* text, size_t* valid_bytes, size_t max_bytes)
+{
+	size_t i = 0;
+
+	while (text[i] != 0) {
+		if (max_bytes > 0 && i >= max_bytes) {
+			break;
+		}
+
+		++i;
+	}
+
+	if (valid_bytes) {
+		*valid_bytes = i;
+	}
+
+	return i;
+}
+
+/**
+	@brief Finds the string length of a given, NUL-terminated UTF32 string.
+
+	@param text A NUL-terminated UTF32 string.
+	@param valid_bytes A pointer to a size_t variable that will be set with the
+		number of valid bytes in the string. Can be NULL.
+	@return The number of valid characters in the string.
+*/
+size_t utf32_strlen(const uint32_t* text, size_t* valid_bytes)
+{
+	return utf32_strnlen(text, valid_bytes, 0);
 }
 
 /**
@@ -143,7 +191,8 @@ size_t utf8_strlen(const uint8_t* text, size_t* valid_bytes) {
 	@param buffer_size The size of `buffer`.
 	@return The number of converted characters or 0 on error.
 */
-size_t utf8_to_utf32(const uint8_t* text, uint32_t* buffer, size_t buffer_size) {
+size_t utf8_to_utf32(const uint8_t* text, uint32_t* buffer, size_t buffer_size)
+{
 	size_t num_chars = utf8_strlen(text, NULL);
 	size_t i = 0;
 	size_t cp_size;
